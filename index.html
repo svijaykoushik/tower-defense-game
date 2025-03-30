@@ -33,9 +33,11 @@
   </ul>
 </div>
 <canvas id="gameCanvas" width="800" height="600"></canvas>
+<button id="restartButton">Restart Game</button>
 <script>
   const canvas = document.getElementById('gameCanvas');
   const ctx = canvas.getContext('2d');
+  const restartButton = document.getElementById('restartButton');
 
   const cellSize = 50;
   const gridWidth = canvas.width / cellSize;
@@ -55,6 +57,27 @@
   let money = 100;
   let health = 10;
   let gameOver = false;
+  let enemiesSpawned = 0;
+  let waveEnemies = 10; // Number of enemies per wave
+  let spawnInterval = 100; // Frames between enemy spawns
+  
+  function resetGame() {
+    enemies.length = 0;
+    towers.length = 0;
+    wave = 1;
+    money = 100;
+    health = 10;
+    gameOver = false;
+    enemiesSpawned = 0;
+    waveEnemies = 10;
+    spawnInterval = 100;
+    spawnTimer = 0;
+    restartButton.style.display = 'none'; // Hide the button
+    gameLoop();
+  }
+
+  restartButton.addEventListener('click', resetGame);
+
 
   function drawGrid() {
     for (let x = 0; x < gridWidth; x++) {
@@ -156,7 +179,10 @@
   }
 
   function spawnEnemy() {
-    enemies.push(new Enemy());
+    if (enemiesSpawned < waveEnemies) {
+      enemies.push(new Enemy());
+      enemiesSpawned++;
+    }
   }
 
   function handleMouseClick(event) {
@@ -181,12 +207,16 @@
 
   canvas.addEventListener('click', handleMouseClick);
 
+  let spawnTimer = 0;
+
   function gameLoop() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     drawGrid();
     drawPath();
 
-    if (Math.random() < 0.01) {
+    spawnTimer++;
+    if (spawnTimer >= spawnInterval) {
+      spawnTimer = 0;
       spawnEnemy();
     }
 
@@ -205,15 +235,26 @@
     ctx.fillText(`Money: ${money}`, 10, 40);
     ctx.fillText(`Health: ${health}`, 10, 60);
 
-    if(gameOver){
-      ctx.fillStyle = "red";
-      ctx.font = "48px serif";
-      ctx.fillText("Game Over", canvas.width/2 - 120, canvas.height/2);
+     if (gameOver) {
+      ctx.fillStyle = 'red';
+      ctx.font = '48px serif';
+      ctx.fillText('Game Over', canvas.width / 2 - 120, canvas.height / 2);
+      restartButton.style.display = 'block'; // Show the button
       return;
+    }
+
+    if (enemies.length === 0 && enemiesSpawned === waveEnemies) {
+      wave++;
+      enemiesSpawned = 0;
+      waveEnemies += 5; // Increase enemies per wave
+      spawnInterval = Math.max(20, spawnInterval - 10); //increase spawn rate
+      money+= wave*20; //give player money for completing wave.
     }
 
     requestAnimationFrame(gameLoop);
   }
+
+  gameLoop();
 
   gameLoop();
 </script>
